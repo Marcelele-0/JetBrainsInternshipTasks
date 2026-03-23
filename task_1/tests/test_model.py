@@ -39,5 +39,15 @@ class TestWord2Vec(unittest.TestCase):
         # Check if weights did NOT change for uninvolved words (e.g. index 5)
         self.assertTrue(np.array_equal(old_w1[5], new_w1[5]))
 
+    def test_dimensions(self):
+        """Verify matrix dimensions are preserved after training steps."""
+        self.assertEqual(self.model.W1.shape, (self.vocab_size, self.embedding_dim))
+        self.assertEqual(self.model.W2.shape, (self.vocab_size, self.embedding_dim))
+        
+        self.model.train_step(0, 1, [2, 3])
+        
+        self.assertEqual(self.model.W1.shape, (self.vocab_size, self.embedding_dim))
+        self.assertEqual(self.model.W2.shape, (self.vocab_size, self.embedding_dim))
+
 if __name__ == '__main__':
     unittest.main()

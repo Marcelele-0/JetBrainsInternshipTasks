@@ -33,21 +33,29 @@ class TextPreprocessor:
     def subsample(self, sentences: List[List[str]], threshold: float = 1e-5) -> List[List[str]]:
         """
         Apply subsampling to discard frequent words.
-        The probability of discarding a word w is given by P(w) = 1 - sqrt(t / f(w)).
-        Here we use a rejection probability based on implementation details:
-        keep_prob = (sqrt(f(w)/t) + 1) * (t/f(w))
+        Formula: P(w_i) = 1 - sqrt(t / f(w_i)).
+        This technique accelerates training and improves vector quality for rare words.
         """
         subsampled_sentences = []
+        if self.total_words_count == 0:
+            return sentences
+
         for sentence in sentences:
             kept_words = []
             for word in sentence:
                 if word not in self.word_counts:
+                    # Rare words (below min_count) are usually discarded during vocab build or handled outside.
+                    # If we encounter them here, let's keep them (or discard, depending on policy).
                     continue
                 
                 freq = self.word_counts[word] / self.total_words_count
-                p_keep = (np.sqrt(freq / threshold) + 1) * (threshold / freq)
                 
-                if random.random() < p_keep:
+                # Probability of discarding the word
+                p_discard = 1.0 - np.sqrt(threshold / freq)
+                
+                # Keep word if random > discard probability
+                # If freq < threshold, p_discard < 0, so random() > p_discard is always true (keep).
+                if random.random() > p_discard:
                     kept_words.append(word)
             subsampled_sentences.append(kept_words)
         return subsampled_sentences

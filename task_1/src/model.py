@@ -8,6 +8,8 @@ class Word2Vec:
         self.lr = learning_rate
         
         # Weight Initialization (He initialization/standard normal)
+        # Random initiation is crucial to break symmetry.
+        # If we initialized with zeros, all neurons would learn the same features during backpropagation.
         # W1: Input matrix (Center words), W2: Output matrix (Context words)
         self.W1 = np.random.randn(self.v_size, self.dim) * 0.1
         self.W2 = np.random.randn(self.v_size, self.dim) * 0.1

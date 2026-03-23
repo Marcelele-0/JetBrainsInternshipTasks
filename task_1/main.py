@@ -1,12 +1,22 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import random
+from tqdm import tqdm
 from src.model import Word2Vec
 from src.preprocessing import TextPreprocessor
 from src.utils import cosine_similarity
 import argparse
 import os
 
+def set_seed(seed=42):
+    """Set random seed for reproducibility."""
+    random.seed(seed)
+    np.random.seed(seed)
+
 def main():
+    # 0. Reproducibility
+    set_seed(42)
+
     # 1. Setup Toy Dataset (simple sentences for demonstration)
     sentences = [
         ["cat", "purr"], 
@@ -25,6 +35,10 @@ def main():
     # 2. Preprocessing
     preprocessor = TextPreprocessor(min_count=1)
     preprocessor.build_vocab(sentences)
+
+    # Subsampling
+    # Apply subsampling to discard frequent words which reduces noise and speeds up training.
+    sentences = preprocessor.subsample(sentences, threshold=1e-5)
     
     vocab_size = preprocessor.vocab_size
     embedding_dim = 10
@@ -34,6 +48,7 @@ def main():
     num_negatives = 3
 
     # 3. Model Initialization
+    # Initialize Word2Vec model with Skip-gram architecture and Negative Sampling.
     model = Word2Vec(vocab_size=vocab_size, embedding_dim=embedding_dim, learning_rate=learning_rate)
 
     print(f"Training Word2Vec (Vocab: {vocab_size}, Dim: {embedding_dim})...")
@@ -41,7 +56,9 @@ def main():
     # 4. Training Loop
     losses = []
     
-    for epoch in range(num_epochs):
+    # Use tqdm for progress bar
+    progress_bar = tqdm(range(num_epochs), desc="Training Progress", unit="epoch")
+    for epoch in progress_bar:
         epoch_loss = 0
         count = 0
         
@@ -58,7 +75,7 @@ def main():
         losses.append(epoch_loss)
             
         if epoch % 20 == 0:
-            print(f"Epoch {epoch}, Loss: {epoch_loss:.4f}")
+            progress_bar.set_postfix({"Loss": f"{epoch_loss:.4f}"})
 
     # 5. Save Embeddings
     os.makedirs("data", exist_ok=True)
